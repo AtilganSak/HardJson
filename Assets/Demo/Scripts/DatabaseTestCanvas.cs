@@ -17,7 +17,7 @@ public class DatabaseTestCanvas : MonoBehaviour
     [SerializeField] Button resetSceneButton;
 
     private void OnEnable()
-    {
+    {        
         saveButton.onClick.AddListener(Pressed_Save_Button);
         loadButton.onClick.AddListener(Pressed_Load_Button);
         resetSceneButton.onClick.AddListener(Pressed_ResetScene_Button);

@@ -8,7 +8,7 @@ public class CubeController : MonoBehaviour
 
     private void OnEnable()
     {
-        cubes = GetComponentsInChildren<Rigidbody>();
+        cubes = GetComponentsInChildren<Rigidbody>();        
     }        
     private void AddForce()
     {
@@ -27,7 +27,7 @@ public class CubeController : MonoBehaviour
                 cubes[i].transform.rotation = TransformDB.Instance.transformDatas[i].rotation;
             }
         }
-    }
+    }    
     private void SaveCubeTransforms()
     {
         TransformData[] datas = new TransformData[cubes.Length];
@@ -49,9 +49,8 @@ public class CubeController : MonoBehaviour
         }
         if (GUI.Button(new Rect(0,102,200,100),"Save", myButtonStyle))
         {
-
-
-            SaveCubeTransforms();
+            //SaveCubeTransforms();
+            HardJson.SaveAllDatabases();
         }
         if (GUI.Button(new Rect(0, 202, 200, 100), "Load", myButtonStyle))
         {

@@ -11,16 +11,16 @@ public class DB<T> where T : class, new()
     {
         get
         {
-            if(_instance == null)
+            if (_instance == null)
             {
-                _instance = HardJson.GetJsonToFile<T>();              
+                _instance = HardJson.GetJsonToFile<T>();
             }
             return _instance;
         }
     }
     public void Save()
     {
-        HardJson.SaveJsonToFile(_instance);        
+        HardJson.SaveJsonToFile(_instance);
     }
     public void SaveAsync(Action callback)
     {

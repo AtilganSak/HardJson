@@ -1,11 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
 public static class HardJson
 {
     private const string ext = ".dat";
+
+    private static List<object> dBs = new();
 
     public static void SaveJsonToFile(object _data, bool _is_crypto = false)
     {
@@ -22,22 +27,7 @@ public static class HardJson
         if (_is_crypto)
             json_text = CryptoHelper.Encrypt(json_text, "-EnKey*-");
         File.WriteAllText(path, json_text);
-    }
-    public static void SaveJsonToStreamingFile(object _data, bool _is_crypto = false)
-    {
-        string path = Path.Combine(FileDataPath(), _data.ToString() + ext);
-        string json_text = JsonUtility.ToJson(_data);
-        if (_is_crypto)
-            json_text = CryptoHelper.Encrypt(json_text, "-EnKey*-");
-
-#if UNITY_EDITOR
-        if (!Directory.Exists("Assets/StreamingAssets"))
-        {
-            Directory.CreateDirectory("Assets/StreamingAssets");
-        }
-#endif
-        File.WriteAllText(path, json_text);
-    }
+    }    
     public static async void SaveJsonToFileAsync(object _data, bool _is_crypto = false, Action _callback = null)
     {
         string _path = Path.Combine(Application.persistentDataPath, _data.ToString() + ext);
@@ -58,35 +48,18 @@ public static class HardJson
         string _path = Path.Combine(Application.persistentDataPath, typeof(T).ToString() + ext);
         if (!File.Exists(_path))
         {
-            SaveJsonToFile(new T());
+            var data = new T();
+            SaveJsonToFile(data);
+            dBs.Add(data);
+            //DBService dBService = data as DBService;
+            //if (dBService != null)
         }
         string get_json_text = File.ReadAllText(_path);
         if (_is_crypto)
             get_json_text = CryptoHelper.Decrypt(get_json_text, "-EnKey*-");
 
         return JsonUtility.FromJson<T>(get_json_text);        
-    }
-    public static T GetJsonFromStreaming<T>(bool _is_crypto = false) where T : new()
-    {
-        string _path = FileDataPath() + typeof(T).ToString() + ext;
-        string get_json_text = "";
-
-        if (!File.Exists(_path))
-        {
-            SaveJsonToStreamingFile(new T());
-        }
-#if UNITY_EDITOR || UNITY_IOS
-        get_json_text = File.ReadAllText(_path);
-#elif UNITY_ANDROID
-            WWW reader = new WWW (_path);
-            while (!reader.isDone) { }
-            get_json_text = reader.text;
-#endif        
-        if (_is_crypto)
-            get_json_text = CryptoHelper.Decrypt(get_json_text, "-EnKey*-");
-
-        return (T)JsonUtility.FromJson(get_json_text, typeof(T));
-    }
+    }    
     private static string FileDataPath()
     {
         if (Application.platform == RuntimePlatform.Android)
@@ -105,7 +78,13 @@ public static class HardJson
     //When a new DB is created it needs to be added here. But only inhereted classes from DB.
     public static void SaveAllDatabases()
     {
-        GameDB.Instance.Save();
+        if (dBs.Count > 0)
+        {
+            foreach (var item in dBs)
+            {
+                SaveJsonToFile(item);
+            }
+        }
     }
 #if UNITY_EDITOR
     [MenuItem("Tools/Delete Database")]
@@ -122,8 +101,26 @@ public static class HardJson
     }
     //When a new DB is created it needs to be added here. But only inhereted classes from DB.
     private static void DeleteAllDatabases()
-    {
+    {         
         DeleteFile(Path.Combine(Application.persistentDataPath, GameDB.Instance.ToString() + ext));
+        DeleteFile(Path.Combine(Application.persistentDataPath, TransformDB.Instance.ToString() + ext));
+
+        /*
+         * If you want to find all classes automatically, you can close the line above and open the code snippet below.
+         * But keep in mind that this code snippet will create performance issues. 
+         * Because the reflection method is used, it checks all scripts in your project.
+        */
+
+        //var allTypes = Assembly.GetExecutingAssembly().GetTypes();
+        //var derivedTypes = allTypes
+        //    .Where(t => t.IsClass && !t.IsAbstract && !t.IsGenericType && t.BaseType != null &&
+        //                t.BaseType.IsGenericType &&
+        //                t.BaseType.GetGenericTypeDefinition() == typeof(DB<>));
+
+        //foreach (var derivedType in derivedTypes)
+        //{
+        //    DeleteFile(Path.Combine(Application.persistentDataPath, derivedType.ToString() + ext));
+        //}
     }
     [MenuItem("Tools/Open DB Folder")]
     private static void OpenDBFolder()
